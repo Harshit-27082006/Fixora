@@ -16,7 +16,11 @@ import {
   FileText, 
   Info,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  Navigation,
+  Crosshair,
+  Compass,
+  RefreshCw
 } from 'lucide-react';
 
 const SAMPLE_CAMPUS_IMAGES = [
@@ -50,6 +54,11 @@ export function ReportComplaint() {
   const [imageUrl, setImageUrl] = useState('');
   const [assignedDepartment, setAssignedDepartment] = useState('Maintenance');
 
+  // GPS Location State
+  const [gpsCoordinates, setGpsCoordinates] = useState(null); // { lat, lng, accuracy, detectedAt }
+  const [gpsStatus, setGpsStatus] = useState('idle'); // 'idle' | 'loading' | 'detected' | 'denied' | 'error'
+  const [gpsNotice, setGpsNotice] = useState('');
+
   // AI Assistance state
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [duplicateMatch, setDuplicateMatch] = useState(null);
@@ -57,6 +66,59 @@ export function ReportComplaint() {
 
   // Success Modal
   const [submittedTicket, setSubmittedTicket] = useState(null);
+
+  // Request GPS Geolocation on user button click
+  const handleRequestLocation = () => {
+    if (typeof window === 'undefined' || !('geolocation' in navigator)) {
+      setGpsStatus('error');
+      setGpsNotice('Geolocation API is not supported by your browser.');
+      return;
+    }
+
+    setGpsStatus('loading');
+    setGpsNotice('Acquiring device GPS coordinates...');
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        const coords = {
+          lat: latitude,
+          lng: longitude,
+          accuracy: Math.round(accuracy),
+          detectedAt: new Date().toISOString()
+        };
+        setGpsCoordinates(coords);
+        setGpsStatus('detected');
+        setGpsNotice(`GPS Verified: ${latitude.toFixed(5)}° N, ${longitude.toFixed(5)}° E (±${Math.round(accuracy)}m)`);
+        
+        // If location is blank, provide GPS label
+        if (!location.trim()) {
+          setLocation(`Campus Sector [${latitude.toFixed(4)}, ${longitude.toFixed(4)}]`);
+        }
+      },
+      (error) => {
+        console.warn('Geolocation error:', error);
+        if (error.code === 1) { // PERMISSION_DENIED
+          setGpsStatus('denied');
+          setGpsNotice('Location permission denied. GPS is completely optional — you can still type the campus room/block name manually.');
+        } else {
+          setGpsStatus('error');
+          setGpsNotice('Could not determine current location. Please enter campus room/block manually.');
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 30000
+      }
+    );
+  };
+
+  const handleClearLocation = () => {
+    setGpsCoordinates(null);
+    setGpsStatus('idle');
+    setGpsNotice('');
+  };
 
   // Run AI analysis as user types title and description
   useEffect(() => {
@@ -105,6 +167,7 @@ export function ReportComplaint() {
       description: description.trim(),
       category,
       location: location.trim() || 'General Campus Area',
+      coordinates: gpsCoordinates, // Attach GPS coordinates if permitted
       priority,
       assignedDepartment,
       imageUrl: imageUrl || null,
@@ -176,11 +239,45 @@ export function ReportComplaint() {
               />
             </div>
 
-            {/* Location with Quick Presets */}
+            {/* Location with GPS Current Location & Quick Presets */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-                Specific Campus Location <span className="text-rose-500">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+                  Specific Campus Location <span className="text-rose-500">*</span>
+                </label>
+
+                {/* GPS Current Location Button */}
+                <button
+                  type="button"
+                  onClick={handleRequestLocation}
+                  disabled={gpsStatus === 'loading'}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold transition-all border ${
+                    gpsStatus === 'detected'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                      : 'bg-slate-50 hover:bg-brand-50 text-slate-700 hover:text-brand-700 border-slate-300'
+                  }`}
+                  title="Detect GPS coordinates using device location"
+                >
+                  {gpsStatus === 'loading' ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-brand-600" />
+                      <span>Acquiring GPS...</span>
+                    </>
+                  ) : gpsStatus === 'detected' ? (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>GPS Attached</span>
+                    </>
+                  ) : (
+                    <>
+                      <Navigation className="w-3.5 h-3.5 text-brand-600" />
+                      <span>Use Current Location</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Main Location Input */}
               <div className="relative">
                 <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                 <input
@@ -192,6 +289,54 @@ export function ReportComplaint() {
                   className="w-full pl-9 pr-3.5 py-2.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
                 />
               </div>
+
+              {/* GPS Live Feedback & Map Coordinates Card */}
+              {gpsStatus === 'detected' && gpsCoordinates && (
+                <div className="mt-2.5 p-3 rounded-lg bg-emerald-50/80 border border-emerald-200 text-emerald-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Compass className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <div>
+                      <div className="font-bold text-emerald-800">
+                        Current location detected
+                      </div>
+                      <div className="text-[11px] text-emerald-700 font-mono mt-0.5">
+                        Lat: {gpsCoordinates.lat.toFixed(5)}, Lng: {gpsCoordinates.lng.toFixed(5)} (±{gpsCoordinates.accuracy}m)
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs">
+                    <a
+                      href={`https://www.google.com/maps?q=${gpsCoordinates.lat},${gpsCoordinates.lng}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-emerald-800 hover:text-emerald-950 font-bold hover:underline"
+                    >
+                      <span>Preview Map</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={handleClearLocation}
+                      className="text-slate-400 hover:text-rose-600 text-[11px] font-semibold ml-1"
+                    >
+                      Clear GPS
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* GPS Denied / Error Notice */}
+              {gpsNotice && gpsStatus !== 'detected' && (
+                <div className={`mt-2 p-2.5 rounded-lg text-xs flex items-start gap-2 ${
+                  gpsStatus === 'denied' 
+                    ? 'bg-amber-50 border border-amber-200 text-amber-800' 
+                    : 'bg-slate-100 border border-slate-200 text-slate-700'
+                }`}>
+                  <Info className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{gpsNotice}</span>
+                </div>
+              )}
 
               {/* Location presets chips */}
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -289,10 +434,10 @@ export function ReportComplaint() {
                     />
                   </label>
 
-                  {/* Sample Photo Presets for Demo */}
+                  {/* Campus Infrastructure Reference Photos */}
                   <div>
                     <div className="text-[11px] text-slate-500 font-semibold mb-1">
-                      Or select sample test photo:
+                      Or select campus issue reference photo:
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {SAMPLE_CAMPUS_IMAGES.map((sample, idx) => (

@@ -23,7 +23,7 @@ import {
 export function StudentDashboard() {
   const { currentUser, complaints, navigateTo } = useApp();
 
-  // Filter complaints for current student (or all if demo)
+  // Filter complaints logged by current authenticated student
   const studentComplaints = complaints.filter(c => c.reportedBy?.id === currentUser.id);
   const total = studentComplaints.length;
   const pending = studentComplaints.filter(c => ['Submitted', 'Under Review'].includes(c.status)).length;

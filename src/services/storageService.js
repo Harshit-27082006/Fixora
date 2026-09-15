@@ -1,7 +1,7 @@
-import { INITIAL_COMPLAINTS, INITIAL_NOTIFICATIONS, USERS } from '../data/seedData';
+import { INITIAL_COMPLAINTS, INITIAL_NOTIFICATIONS } from '../data/seedData';
 
-const COMPLAINTS_KEY = 'fixora_complaints_v2';
-const NOTIFICATIONS_KEY = 'fixora_notifications_v2';
+const COMPLAINTS_KEY = 'fixora_complaints';
+const NOTIFICATIONS_KEY = 'fixora_notifications';
 const AUTH_USER_KEY = 'fixora_auth_user_session';
 
 export const storageService = {
@@ -12,7 +12,8 @@ export const storageService = {
         this.saveComplaints(INITIAL_COMPLAINTS);
         return INITIAL_COMPLAINTS;
       }
-      return parsed;
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : INITIAL_COMPLAINTS;
     } catch (e) {
       console.error('Error loading complaints from localStorage', e);
       return INITIAL_COMPLAINTS;
@@ -53,8 +54,7 @@ export const storageService = {
     try {
       const data = sessionStorage.getItem(AUTH_USER_KEY) || localStorage.getItem(AUTH_USER_KEY);
       if (!data) return null;
-      const parsed = JSON.parse(data);
-      return parsed;
+      return JSON.parse(data);
     } catch (e) {
       return null;
     }

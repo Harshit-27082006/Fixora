@@ -104,17 +104,39 @@ export function ProfilePage() {
             </h3>
             <div className="space-y-2 text-xs text-slate-600">
               <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
-                <span className="text-slate-500">SSO Status:</span>
-                <span className="font-semibold text-emerald-700">Verified Member</span>
+                <span className="text-slate-500">Access Tier:</span>
+                <span className="font-bold text-brand-700 capitalize">
+                  {currentUser.role === 'admin' ? 'Campus Administration' : (currentUser.role === 'department' ? 'Departmental Staff' : 'Enrolled Student')}
+                </span>
+              </div>
+              {currentUser.role === 'student' && (
+                <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                  <span className="text-slate-500">Student ID / Roll:</span>
+                  <span className="font-mono font-bold text-slate-800">
+                    {currentUser.studentId || currentUser.rollNumber || 'CS-2023-042'}
+                  </span>
+                </div>
+              )}
+              <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                <span className="text-slate-500">SSO Verification:</span>
+                <span className="font-semibold text-emerald-700">Verified Institutional Member</span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                <span className="text-slate-500">Account Created:</span>
+                <span className="font-medium text-slate-700">
+                  {currentUser.joinedDate || 'September 2024'}
+                </span>
               </div>
               <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
                 <span className="text-slate-500">Session Security:</span>
-                <span className="font-semibold text-slate-700">Encrypted JWT</span>
+                <span className="font-mono text-[11px] text-slate-600 truncate max-w-[160px]">
+                  {currentUser.sessionToken || 'Encrypted JWT'}
+                </span>
               </div>
               <div className="flex justify-between items-center py-1">
-                <span className="text-slate-500">Access Tier:</span>
-                <span className="font-bold text-brand-700 capitalize">
-                  {currentUser.role === 'admin' ? 'Administrative' : (currentUser.role === 'department' ? 'Departmental' : 'Student Access')}
+                <span className="text-slate-500">Access Scope:</span>
+                <span className="font-semibold text-slate-700">
+                  {currentUser.role === 'admin' ? 'Full Campus Infrastructure Oversight' : 'Grievance Submission & Tracking'}
                 </span>
               </div>
             </div>

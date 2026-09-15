@@ -5,7 +5,8 @@ import {
   Bell, 
   PlusCircle, 
   LogOut,
-  UserCheck
+  UserCheck,
+  ListFilter
 } from 'lucide-react';
 
 export function Navbar({ onOpenNotifications }) {
@@ -56,14 +57,32 @@ export function Navbar({ onOpenNotifications }) {
 
           {/* Right Action Bar */}
           <div className="flex items-center gap-3">
-            {/* Report button */}
-            <button
-              onClick={() => navigateTo('report')}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all hover:shadow hover:shadow-brand-500/25"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Report Complaint</span>
-            </button>
+            {/* Role-specific Action button */}
+            {currentUser.role === 'admin' ? (
+              <button
+                onClick={() => navigateTo('admin-complaints')}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-amber-700 hover:bg-amber-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all"
+              >
+                <ListFilter className="w-4 h-4" />
+                <span>Complaint Triage</span>
+              </button>
+            ) : currentUser.role === 'department' ? (
+              <button
+                onClick={() => navigateTo('dept-dashboard')}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all"
+              >
+                <ListFilter className="w-4 h-4" />
+                <span>Dept Queue</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => navigateTo('report')}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all hover:shadow hover:shadow-brand-500/25"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Report Complaint</span>
+              </button>
+            )}
 
             {/* Notifications Bell */}
             <button

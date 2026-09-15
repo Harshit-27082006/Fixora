@@ -12,7 +12,7 @@ export function NotificationDrawer({ isOpen, onClose }) {
   const userNotifs = notifications.filter(n => {
     if (n.userId && n.userId === currentUser.id) return true;
     if (n.role && n.role === currentUser.role) return true;
-    return true; // show all for demo ease
+    return !n.userId && !n.role;
   });
 
   const displayedNotifs = filter === 'unread' 

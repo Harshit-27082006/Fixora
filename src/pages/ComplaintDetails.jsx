@@ -19,7 +19,10 @@ import {
   MessageSquare,
   Wrench,
   ChevronRight,
-  Share2
+  Share2,
+  Compass,
+  ExternalLink,
+  Navigation
 } from 'lucide-react';
 
 export function ComplaintDetails() {
@@ -185,6 +188,36 @@ export function ComplaintDetails() {
             </div>
           </div>
         </div>
+
+        {/* GPS Coordinates Verification Card (If permitted) */}
+        {complaint.coordinates && (
+          <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Compass className="w-4 h-4 text-emerald-600 shrink-0" />
+              <div>
+                <span className="font-bold text-emerald-800">GPS Location Coordinates: </span>
+                <span className="font-mono text-emerald-700">
+                  {complaint.coordinates.lat?.toFixed(5)}° N, {complaint.coordinates.lng?.toFixed(5)}° E
+                </span>
+                {complaint.coordinates.accuracy && (
+                  <span className="text-emerald-600 text-[11px] ml-1.5">
+                    (Accuracy: ±{complaint.coordinates.accuracy}m)
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <a
+              href={`https://www.google.com/maps?q=${complaint.coordinates.lat},${complaint.coordinates.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-emerald-800 hover:text-emerald-950 font-bold hover:underline shrink-0"
+            >
+              <span>View On Google Maps</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        )}
 
         {/* AI Brief and Urgency Callout */}
         {(complaint.aiSummary || complaint.riskExplanation) && (

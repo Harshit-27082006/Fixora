@@ -33,8 +33,7 @@ export function Sidebar({ onOpenNotifications }) {
       return [
         { id: 'admin-dashboard', label: 'Admin Overview', icon: LayoutDashboard, badge: null },
         { id: 'admin-complaints', label: 'Complaint Triage', icon: ListFilter, badge: pendingCount ? `${pendingCount} new` : null },
-        { id: 'report', label: 'Log Complaint', icon: PlusCircle, badge: null },
-        { id: 'profile', label: 'Admin Settings', icon: User, badge: null }
+        { id: 'profile', label: 'Admin Profile', icon: User, badge: null }
       ];
     }
     
