@@ -1,36 +1,22 @@
 // Vercel Serverless Function: /api/auth
-const CLOUD_MASTER_ID = 'ff808181a09d98f701a0a3d21ac20bdb';
-const CLOUD_MASTER_URL = `https://api.restful-api.dev/objects/${CLOUD_MASTER_ID}`;
+import crypto from 'node:crypto';
+import { db } from './db.js';
 
-const AUTHORIZED_ADMINS = [
-  {
-    id: 'admin_central_01',
-    name: 'Dr. Sunita Mehra',
-    email: 'admin@campus.edu',
-    role: 'admin',
-    designation: 'Dean of Campus Infrastructure & Student Welfare',
-    department: 'Central Administration',
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
-    phone: '+91 98101 23456',
-    passwordHash: 'admin@123',
-    joinedDate: '2023-01-15'
-  },
-  {
-    id: 'admin_provost_02',
-    name: 'Prof. Ramesh Iyer',
-    email: 'provost@campus.edu',
-    role: 'admin',
-    designation: 'Chief Campus Provost & Works Director',
-    department: 'Central Administration',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    phone: '+91 98101 23457',
-    passwordHash: 'provost@123',
-    joinedDate: '2022-08-01'
-  }
-];
+// Cryptographic hash helper for passwords
+function hashPassword(password) {
+  return crypto.createHash('sha256').update(String(password).trim()).digest('hex');
+}
+
+function verifyPassword(inputPassword, storedHashOrPlain) {
+  if (!inputPassword || !storedHashOrPlain) return false;
+  const cleanInput = String(inputPassword).trim();
+  const inputHash = hashPassword(cleanInput);
+  return cleanInput === storedHashOrPlain || inputHash === storedHashOrPlain;
+}
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  // CORS & Security headers
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
   res.setHeader(
@@ -46,40 +32,41 @@ export default async function handler(req, res) {
   const { action } = req.query;
 
   try {
-    // 1. REGISTER STUDENT ACCOUNT
+    // 1. REGISTER STUDENT ACCOUNT (Only students can publicly register)
     if (action === 'register' && req.method === 'POST') {
-      const { fullName, studentId, email, password } = req.body;
+      const { fullName, studentId, email, password } = req.body || {};
 
       if (!fullName || !studentId || !email || !password) {
-        return res.status(400).json({ error: 'All fields are required for student registration.' });
+        return res.status(400).json({ error: 'All fields (Full Name, Student ID, Email, Password) are required.' });
       }
 
       const cleanEmail = email.trim().toLowerCase();
       const cleanStudentId = studentId.trim().toUpperCase();
 
-      // Prohibit admin registration
-      if (cleanEmail.includes('admin@') || cleanEmail.includes('provost@') || cleanEmail.includes('dean@')) {
+      // Prohibit administrative registration spoofing
+      if (
+        cleanEmail.includes('admin') ||
+        cleanEmail.includes('provost') ||
+        cleanEmail.includes('dean') ||
+        cleanEmail.includes('registrar')
+      ) {
         return res.status(403).json({ error: 'Public registration for administrative accounts is strictly prohibited.' });
       }
 
-      // Fetch users from cloud master
-      const response = await fetch(CLOUD_MASTER_URL);
-      let currentDoc = {};
-      if (response.ok) {
-        currentDoc = await response.json();
+      if (password.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters.' });
       }
 
-      const existingUsers = currentDoc?.data?.users || [];
-      const existingComplaints = currentDoc?.data?.complaints || [];
+      const existingUsers = await db.getUsers();
 
       // Check duplicates
-      const exists = existingUsers.some(u => 
+      const duplicate = existingUsers.some(u => 
         u.email.toLowerCase() === cleanEmail || 
         (u.studentId && u.studentId.toUpperCase() === cleanStudentId)
       );
 
-      if (exists) {
-        return res.status(409).json({ error: 'Account with this email or student ID already exists.' });
+      if (duplicate) {
+        return res.status(409).json({ error: 'An account with this Email or Student ID already exists. Please sign in.' });
       }
 
       const newStudent = {
@@ -93,87 +80,125 @@ export default async function handler(req, res) {
         hostel: 'Campus Resident',
         phone: '+91 98000 00000',
         avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(fullName.trim())}&backgroundColor=4f46e5`,
-        passwordHash: password,
+        passwordHash: hashPassword(password),
         joinedDate: new Date().toISOString().split('T')[0]
       };
 
-      const updatedUsers = [...existingUsers, newStudent];
+      await db.addUser(newStudent);
 
-      await fetch(CLOUD_MASTER_URL, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: 'FIXORA_V1_MASTER_DATABASE',
-          data: {
-            complaints: existingComplaints,
-            users: updatedUsers,
-            lastUpdated: new Date().toISOString()
-          }
-        })
-      });
-
+      // Return sanitized user object (never return password/hash)
+      const { passwordHash: _, ...safeUser } = newStudent;
       return res.status(201).json({
         success: true,
-        user: { ...newStudent, sessionToken: `stu_token_${Date.now()}` }
+        user: { ...safeUser, authenticatedRole: 'student', sessionToken: `stu_sess_${Date.now()}` }
       });
     }
 
-    // 2. LOGIN AUTHENTICATION
+    // 2. LOGIN AUTHENTICATION (Verified by backend role & credentials)
     if (action === 'login' && req.method === 'POST') {
-      const { role, identifier, password } = req.body;
-      const cleanId = (identifier || '').trim().toLowerCase();
+      const { role, identifier, password } = req.body || {};
 
-      // Admin verification
+      if (!identifier || !password) {
+        return res.status(400).json({ error: 'Please enter both User ID/Email and password.' });
+      }
+
+      const cleanId = String(identifier).trim().toLowerCase();
+
+      // ADMIN AUTHENTICATION
       if (role === 'admin') {
-        const admin = AUTHORIZED_ADMINS.find(a => 
-          a.email.toLowerCase() === cleanId || cleanId === 'admin' || cleanId === 'dean'
-        );
+        // A. Check environment variables configured by developer/owner
+        const envAdminEmail = (process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+        const envAdminPassword = process.env.ADMIN_PASSWORD || '';
+        const envAdminHash = process.env.ADMIN_PASSWORD_HASH || '';
 
-        if (!admin) {
-          return res.status(403).json({ error: 'Access Denied: Not authorized as Campus Administrator.' });
+        let authenticatedAdmin = null;
+
+        if (envAdminEmail && cleanId === envAdminEmail) {
+          const match = envAdminHash
+            ? verifyPassword(password, envAdminHash)
+            : (envAdminPassword && verifyPassword(password, envAdminPassword));
+
+          if (match) {
+            authenticatedAdmin = {
+              id: 'admin_primary_owner',
+              name: process.env.ADMIN_NAME || 'Campus Administrator',
+              email: envAdminEmail,
+              role: 'admin',
+              designation: 'Campus Operations Director & Developer',
+              department: 'Central Administration',
+              avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+              phone: '+91 98100 00000',
+              joinedDate: '2024-01-01'
+            };
+          }
         }
 
-        if (password !== admin.passwordHash && password !== 'admin123' && password !== 'admin@123') {
-          return res.status(401).json({ error: 'Invalid administrative password.' });
+        // B. Check persistent database admins configured via setup-admin script
+        if (!authenticatedAdmin) {
+          const dbAdmins = await db.getAdmins();
+          const found = dbAdmins.find(a => 
+            a.email.toLowerCase() === cleanId || 
+            (a.username && a.username.toLowerCase() === cleanId)
+          );
+
+          if (found && verifyPassword(password, found.passwordHash)) {
+            authenticatedAdmin = {
+              id: found.id || `admin_${Date.now()}`,
+              name: found.name || 'Campus Administrator',
+              email: found.email,
+              role: 'admin',
+              designation: found.designation || 'Campus Operations Director',
+              department: 'Central Administration',
+              avatar: found.avatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+              phone: found.phone || '+91 98101 23456',
+              joinedDate: found.joinedDate || new Date().toISOString().split('T')[0]
+            };
+          }
+        }
+
+        if (!authenticatedAdmin) {
+          return res.status(401).json({
+            error: 'Access Denied: Invalid Administrator email or password. Please verify your authorized credentials.'
+          });
         }
 
         return res.status(200).json({
           success: true,
           user: {
-            ...admin,
+            ...authenticatedAdmin,
             authenticatedRole: 'admin',
-            sessionToken: `adm_jwt_${Date.now()}`
+            sessionToken: `adm_jwt_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
           }
         });
       }
 
-      // Student verification
-      const response = await fetch(CLOUD_MASTER_URL);
-      let currentDoc = {};
-      if (response.ok) {
-        currentDoc = await response.json();
-      }
-
-      const users = currentDoc?.data?.users || [];
+      // STUDENT AUTHENTICATION
+      const users = await db.getUsers();
       const student = users.find(u => 
         u.email.toLowerCase() === cleanId || 
-        (u.studentId && u.studentId.toLowerCase() === cleanId)
+        (u.studentId && u.studentId.toLowerCase() === cleanId) ||
+        (u.rollNumber && u.rollNumber.toLowerCase() === cleanId)
       );
 
       if (!student) {
-        return res.status(404).json({ error: 'Student account not found. Please register.' });
+        return res.status(404).json({
+          error: 'Student account not found. Please click "Create New Account" below to register.'
+        });
       }
 
-      if (student.passwordHash && password !== student.passwordHash && password !== 'student123' && password !== 'student@123') {
-        return res.status(401).json({ error: 'Incorrect student portal password.' });
+      const passwordMatch = verifyPassword(password, student.passwordHash);
+      if (!passwordMatch) {
+        return res.status(401).json({ error: 'Incorrect password for this student account.' });
       }
 
+      // Return sanitized student user
+      const { passwordHash: _, ...safeStudent } = student;
       return res.status(200).json({
         success: true,
         user: {
-          ...student,
+          ...safeStudent,
           authenticatedRole: 'student',
-          sessionToken: `stu_jwt_${Date.now()}`
+          sessionToken: `stu_jwt_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`
         }
       });
     }

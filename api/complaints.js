@@ -1,10 +1,9 @@
 // Vercel Serverless Function: /api/complaints
-const CLOUD_MASTER_ID = 'ff808181a09d98f701a0a3d21ac20bdb';
-const CLOUD_MASTER_URL = `https://api.restful-api.dev/objects/${CLOUD_MASTER_ID}`;
+import { db } from './db.js';
 
 export default async function handler(req, res) {
-  // Set CORS headers
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
@@ -20,87 +19,34 @@ export default async function handler(req, res) {
   try {
     // 1. GET /api/complaints
     if (req.method === 'GET') {
-      const response = await fetch(CLOUD_MASTER_URL);
-      if (response.ok) {
-        const doc = await response.json();
-        const complaints = doc?.data?.complaints || [];
-        return res.status(200).json(complaints);
-      }
-      return res.status(200).json([]);
+      const complaints = await db.getComplaints();
+      return res.status(200).json(complaints);
     }
 
-    // 2. POST /api/complaints
+    // 2. POST /api/complaints (Record new student complaint)
     if (req.method === 'POST') {
       const newComplaint = req.body;
       if (!newComplaint || !newComplaint.title || !newComplaint.description) {
         return res.status(400).json({ error: 'Complaint title and description are required.' });
       }
 
-      // Fetch current store
-      const response = await fetch(CLOUD_MASTER_URL);
-      let currentDoc = {};
-      if (response.ok) {
-        currentDoc = await response.json();
-      }
-
-      const existingComplaints = currentDoc?.data?.complaints || [];
-      const existingUsers = currentDoc?.data?.users || [];
-      const updatedComplaints = [newComplaint, ...existingComplaints.filter(c => c.id !== newComplaint.id)];
-
-      // Persist to master
-      await fetch(CLOUD_MASTER_URL, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: 'FIXORA_V1_MASTER_DATABASE',
-          data: {
-            complaints: updatedComplaints,
-            users: existingUsers,
-            lastUpdated: new Date().toISOString()
-          }
-        })
-      });
-
-      return res.status(201).json(newComplaint);
+      const saved = await db.addComplaint(newComplaint);
+      return res.status(201).json(saved);
     }
 
-    // 3. PATCH /api/complaints
+    // 3. PATCH /api/complaints (Admin dispatch, status, priority, or reply update)
     if (req.method === 'PATCH') {
-      const { id, updates } = req.body;
+      const { id, updates } = req.body || {};
       if (!id) {
         return res.status(400).json({ error: 'Complaint ID is required for update.' });
       }
 
-      const response = await fetch(CLOUD_MASTER_URL);
-      let currentDoc = {};
-      if (response.ok) {
-        currentDoc = await response.json();
+      const updated = await db.updateComplaint(id, updates);
+      if (!updated) {
+        return res.status(404).json({ error: `Complaint with ID ${id} not found.` });
       }
 
-      const existingComplaints = currentDoc?.data?.complaints || [];
-      const existingUsers = currentDoc?.data?.users || [];
-
-      const updatedComplaints = existingComplaints.map(c => {
-        if (c.id === id) {
-          return { ...c, ...updates, updatedAt: new Date().toISOString() };
-        }
-        return c;
-      });
-
-      await fetch(CLOUD_MASTER_URL, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: 'FIXORA_V1_MASTER_DATABASE',
-          data: {
-            complaints: updatedComplaints,
-            users: existingUsers,
-            lastUpdated: new Date().toISOString()
-          }
-        })
-      });
-
-      return res.status(200).json({ success: true, id });
+      return res.status(200).json({ success: true, complaint: updated });
     }
 
     return res.status(405).json({ error: `Method ${req.method} not allowed` });

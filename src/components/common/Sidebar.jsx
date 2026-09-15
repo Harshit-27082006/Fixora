@@ -36,19 +36,9 @@ export function Sidebar({ onOpenNotifications }) {
         { id: 'profile', label: 'Admin Profile', icon: User, badge: null }
       ];
     }
-    
-    if (currentUser.role === 'department') {
-      const deptTickets = complaints.filter(c => c.assignedDepartment === currentUser.departmentId && c.status !== 'Resolved');
-      return [
-        { id: 'dept-dashboard', label: `${currentUser.departmentId} Queue`, icon: LayoutDashboard, badge: deptTickets.length ? `${deptTickets.length} active` : null },
-        { id: 'admin-complaints', label: 'All Complaints', icon: ListFilter, badge: null },
-        { id: 'report', label: 'Report Issue', icon: PlusCircle, badge: null },
-        { id: 'profile', label: 'Staff Profile', icon: User, badge: null }
-      ];
-    }
 
-    // Default: Student/Staff (strictly no admin links)
-    const myOpen = complaints.filter(c => c.reportedBy?.id === currentUser.id && c.status !== 'Resolved');
+    // Student navigation
+    const myOpen = complaints.filter(c => c.reportedBy?.id === currentUser.id && !['Resolved', 'Closed'].includes(c.status));
     return [
       { id: 'student-dashboard', label: 'Student Dashboard', icon: LayoutDashboard, badge: null },
       { id: 'report', label: 'Report Complaint', icon: PlusCircle, badge: 'Smart AI' },
@@ -69,9 +59,7 @@ export function Sidebar({ onOpenNotifications }) {
           </div>
           <div className="mt-1 flex items-center justify-between">
             <span className="text-sm font-bold text-slate-800 truncate pr-1">
-              {currentUser.role === 'admin' 
-                ? 'Central Campus Admin' 
-                : (currentUser.role === 'department' ? `${currentUser.departmentId} Dept` : 'Student Portal')}
+              {currentUser.role === 'admin' ? 'Campus Administrator' : 'Student Portal'}
             </span>
             <span className="w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100 shrink-0" />
           </div>

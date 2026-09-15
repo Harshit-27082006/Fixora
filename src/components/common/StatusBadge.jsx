@@ -39,6 +39,12 @@ export function StatusBadge({ status, size = 'md' }) {
       icon: CheckCircle2,
       label: 'Resolved'
     },
+    'Closed': {
+      bg: 'bg-slate-200 text-slate-800 border-slate-400',
+      dot: 'bg-slate-600',
+      icon: CheckCircle2,
+      label: 'Closed'
+    },
     'Rejected': {
       bg: 'bg-rose-50 text-rose-700 border-rose-200',
       dot: 'bg-rose-500',

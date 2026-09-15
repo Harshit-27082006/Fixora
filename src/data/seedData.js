@@ -34,7 +34,8 @@ export const STATUS_STEPS = [
   { id: 'Under Review', label: 'Under Review', description: 'Admin assessing urgency and categorizing' },
   { id: 'Assigned', label: 'Assigned', description: 'Dispatched to responsible department' },
   { id: 'In Progress', label: 'In Progress', description: 'Department personnel actively working on fix' },
-  { id: 'Resolved', label: 'Resolved', description: 'Issue rectified and verified' }
+  { id: 'Resolved', label: 'Resolved', description: 'Issue rectified and verified' },
+  { id: 'Closed', label: 'Closed', description: 'Complaint finalized and closed by administration' }
 ];
 
 export const USERS = [

@@ -404,7 +404,7 @@ export function LoginPage() {
                       required
                       value={identifier}
                       onChange={(e) => setIdentifier(e.target.value)}
-                      placeholder={role === 'admin' ? 'admin@campus.edu or provost@campus.edu' : 'Enter College Email or Enrollment No.'}
+                      placeholder={role === 'admin' ? 'Enter Authorized Administrator Email' : 'Enter College Email or Student ID'}
                       className="w-full pl-10 pr-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-slate-800 placeholder:text-slate-400 bg-slate-50/50 hover:bg-white transition-colors"
                     />
                   </div>
@@ -433,7 +433,7 @@ export function LoginPage() {
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter portal password"
+                      placeholder="Enter password"
                       className="w-full pl-10 pr-10 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-slate-800 placeholder:text-slate-400 bg-slate-50/50 hover:bg-white transition-colors"
                     />
                     <button
@@ -474,7 +474,7 @@ export function LoginPage() {
                       : 'bg-brand-600 hover:bg-brand-700 active:bg-brand-800 shadow-brand-500/20'
                   }`}
                 >
-                  <span>{isSubmitting ? 'Authenticating...' : (role === 'admin' ? 'Authenticate as Administrator' : 'Login to Student Portal')}</span>
+                  <span>{isSubmitting ? 'Authenticating...' : (role === 'admin' ? 'Login as Admin' : 'Login')}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 

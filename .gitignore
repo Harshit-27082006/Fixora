@@ -9,6 +9,9 @@ dist/
 .env.local
 .env.*.local
 
+# Local database
+.data/
+
 # Vercel
 .vercel/
 

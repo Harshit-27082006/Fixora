@@ -10,7 +10,6 @@ import { MyComplaints } from './pages/MyComplaints';
 import { ComplaintDetails } from './pages/ComplaintDetails';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminComplaints } from './pages/AdminComplaints';
-import { DeptDashboard } from './pages/DeptDashboard';
 import { ProfilePage } from './pages/ProfilePage';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
@@ -26,12 +25,12 @@ function AppContent() {
   const renderActivePage = () => {
     // Enforce role-based view permissions
     if (currentUser.role === 'student') {
-      if (['admin-dashboard', 'admin-complaints', 'dept-dashboard'].includes(activePage)) {
+      if (['admin-dashboard', 'admin-complaints'].includes(activePage)) {
         return <StudentDashboard />;
       }
-    } else if (currentUser.role === 'department') {
-      if (['admin-dashboard'].includes(activePage)) {
-        return <DeptDashboard />;
+    } else if (currentUser.role === 'admin') {
+      if (['student-dashboard', 'report', 'my-complaints'].includes(activePage)) {
+        return <AdminDashboard />;
       }
     }
 
@@ -48,13 +47,10 @@ function AppContent() {
         return <AdminDashboard />;
       case 'admin-complaints':
         return <AdminComplaints />;
-      case 'dept-dashboard':
-        return <DeptDashboard />;
       case 'profile':
         return <ProfilePage />;
       default:
         if (currentUser.role === 'admin') return <AdminDashboard />;
-        if (currentUser.role === 'department') return <DeptDashboard />;
         return <StudentDashboard />;
     }
   };

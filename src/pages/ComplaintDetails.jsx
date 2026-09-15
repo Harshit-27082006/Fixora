@@ -245,94 +245,73 @@ export function ComplaintDetails() {
       </div>
 
       {/* Administrative / Department Resolution Action Bar (Hidden for students) */}
-      {(isAdmin || isDept) && (
+      {/* Administrative Resolution Action Bar (Admin only) */}
+      {isAdmin && (
         <div className="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-xl p-5 text-white shadow-md">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
               <span className="text-[11px] font-bold text-brand-400 uppercase tracking-wider flex items-center gap-1.5">
                 <Wrench className="w-3.5 h-3.5" />
-                {isAdmin ? 'Administrative Resolution Controls' : `${complaint.assignedDepartment} Department Action Console`}
+                Administrative Resolution Controls
               </span>
               <p className="text-xs text-slate-300">
-                {isAdmin && "Triage this ticket, dispatch to campus departments, or adjust priority SLA."}
-                {isDept && `Field staff controls for ${complaint.assignedDepartment} department tasks.`}
+                Triage this ticket, dispatch to campus departments, adjust priority SLA, or record official resolution notes.
               </p>
             </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* Admin Controls */}
-            {isAdmin && (
-              <>
-                <button
-                  onClick={() => setShowAssignModal(true)}
-                  className="px-3.5 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5"
-                >
-                  <Building className="w-3.5 h-3.5" />
-                  <span>Assign Department</span>
-                </button>
-
-                <button
-                  onClick={() => setShowStatusModal(true)}
-                  className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5"
-                >
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Change Status</span>
-                </button>
-
-                <div className="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-700 text-xs">
-                  <span className="text-slate-400 text-[11px]">Priority:</span>
-                  <select
-                    value={complaint.priority}
-                    onChange={handlePriorityChange}
-                    className="bg-transparent text-white font-bold text-xs outline-none cursor-pointer"
-                  >
-                    <option value="Low" className="bg-slate-900 text-white">Low</option>
-                    <option value="Medium" className="bg-slate-900 text-white">Medium</option>
-                    <option value="High" className="bg-slate-900 text-white">High</option>
-                    <option value="Critical" className="bg-slate-900 text-white">Critical</option>
-                  </select>
-                </div>
-              </>
-            )}
-
-            {/* Department Controls */}
-            {isDept && (
-              <>
-                {complaint.status !== 'In Progress' && (
-                  <button
-                    onClick={() => handleUpdateStatus('In Progress', 'Technician arrived on site and started inspection.')}
-                    className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5"
-                  >
-                    <Wrench className="w-3.5 h-3.5" />
-                    <span>Start Work (In Progress)</span>
-                  </button>
-                )}
-
-                {complaint.status !== 'Resolved' && (
-                  <button
-                    onClick={() => handleUpdateStatus('Resolved', 'Issue successfully repaired, tested and confirmed working.')}
-                    className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Mark as Resolved</span>
-                  </button>
-                )}
-              </>
-            )}
-
-            {/* Fast Close/Resolve for Admin */}
-            {isAdmin && !isResolved && (
+            <div className="flex flex-wrap items-center gap-2.5">
               <button
-                onClick={() => handleUpdateStatus('Resolved', 'Administrative closure: verified resolved with facilities team.')}
-                className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5"
+                onClick={() => setShowAssignModal(true)}
+                className="px-3.5 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5"
               >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Close Ticket</span>
+                <Building className="w-3.5 h-3.5" />
+                <span>Assign Department</span>
               </button>
-            )}
+
+              <button
+                onClick={() => setShowStatusModal(true)}
+                className="px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5"
+              >
+                <Clock className="w-3.5 h-3.5" />
+                <span>Change Status</span>
+              </button>
+
+              <div className="flex items-center gap-1.5 bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-700 text-xs">
+                <span className="text-slate-400 text-[11px]">Priority:</span>
+                <select
+                  value={complaint.priority}
+                  onChange={handlePriorityChange}
+                  className="bg-transparent text-white font-bold text-xs outline-none cursor-pointer"
+                >
+                  <option value="Low" className="bg-slate-900 text-white">Low</option>
+                  <option value="Medium" className="bg-slate-900 text-white">Medium</option>
+                  <option value="High" className="bg-slate-900 text-white">High</option>
+                  <option value="Critical" className="bg-slate-900 text-white">Critical</option>
+                </select>
+              </div>
+
+              {complaint.status !== 'Resolved' && complaint.status !== 'Closed' && (
+                <button
+                  onClick={() => handleUpdateStatus('Resolved', 'Verified resolved with campus facilities team.')}
+                  className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Mark Resolved</span>
+                </button>
+              )}
+
+              {complaint.status !== 'Closed' && (
+                <button
+                  onClick={() => handleUpdateStatus('Closed', 'Administrative closure: grievance verified and closed.')}
+                  className="px-3.5 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Close Ticket</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
       )}
 
       {/* Grid: Left Column Details & Timeline, Right Column Activity / Feedback */}
@@ -582,6 +561,7 @@ export function ComplaintDetails() {
                   <option value="Assigned">Assigned</option>
                   <option value="In Progress">In Progress</option>
                   <option value="Resolved">Resolved</option>
+                  <option value="Closed">Closed</option>
                   <option value="Rejected">Rejected</option>
                 </select>
               </div>

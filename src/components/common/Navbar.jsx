@@ -24,8 +24,6 @@ export function Navbar({ onOpenNotifications }) {
   const handleLogoClick = () => {
     if (currentUser.role === 'admin') {
       navigateTo('admin-dashboard');
-    } else if (currentUser.role === 'department') {
-      navigateTo('dept-dashboard');
     } else {
       navigateTo('student-dashboard');
     }
@@ -65,14 +63,6 @@ export function Navbar({ onOpenNotifications }) {
               >
                 <ListFilter className="w-4 h-4" />
                 <span>Complaint Triage</span>
-              </button>
-            ) : currentUser.role === 'department' ? (
-              <button
-                onClick={() => navigateTo('dept-dashboard')}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all"
-              >
-                <ListFilter className="w-4 h-4" />
-                <span>Dept Queue</span>
               </button>
             ) : (
               <button
@@ -114,9 +104,7 @@ export function Navbar({ onOpenNotifications }) {
                   {currentUser.name}
                 </div>
                 <div className="text-[11px] text-slate-500 capitalize">
-                  {currentUser.role === 'department' 
-                    ? `${currentUser.departmentId} Staff` 
-                    : (currentUser.role === 'admin' ? 'Campus Administration' : (currentUser.rollNumber || 'Student'))}
+                  {currentUser.role === 'admin' ? 'Campus Administrator' : (currentUser.rollNumber || 'Student')}
                 </div>
               </div>
             </button>

@@ -15,7 +15,6 @@ export function AppProvider({ children }) {
     const user = storageService.getAuthUser();
     if (!user) return 'login';
     if (user.role === 'admin') return 'admin-dashboard';
-    if (user.role === 'department') return 'dept-dashboard';
     return 'student-dashboard';
   });
   const [selectedComplaintId, setSelectedComplaintId] = useState(null);
@@ -135,7 +134,7 @@ export function AppProvider({ children }) {
       } catch (e) {
         // Silent sync failure
       }
-    }, 6000);
+    }, 4000);
 
     return () => clearInterval(interval);
   }, []);
@@ -163,8 +162,6 @@ export function AppProvider({ children }) {
       // Route immediately based on verified role
       if (user.role === 'admin') {
         setActivePage('admin-dashboard');
-      } else if (user.role === 'department') {
-        setActivePage('dept-dashboard');
       } else {
         setActivePage('student-dashboard');
       }
@@ -216,7 +213,7 @@ export function AppProvider({ children }) {
 
     // Role-based protection: Students CANNOT access admin views
     if (currentUser?.role === 'student') {
-      if (['admin-dashboard', 'admin-complaints', 'dept-dashboard'].includes(page)) {
+      if (['admin-dashboard', 'admin-complaints'].includes(page)) {
         setActivePage('student-dashboard');
         showToast('Access restricted: administrative authorization required', 'error');
         return;
@@ -225,11 +222,6 @@ export function AppProvider({ children }) {
       // Admins should not access student submission or personal list
       if (['student-dashboard', 'my-complaints'].includes(page)) {
         setActivePage('admin-dashboard');
-        return;
-      }
-    } else if (currentUser?.role === 'department') {
-      if (['admin-dashboard'].includes(page)) {
-        setActivePage('dept-dashboard');
         return;
       }
     }

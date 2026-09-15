@@ -148,6 +148,7 @@ export function AdminComplaints() {
               <option value="Assigned">Assigned</option>
               <option value="In Progress">In Progress</option>
               <option value="Resolved">Resolved</option>
+              <option value="Closed">Closed</option>
             </select>
           </div>
 
@@ -374,6 +375,7 @@ export function AdminComplaints() {
                     <option value="Assigned">Assigned</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Resolved">Resolved</option>
+                    <option value="Closed">Closed</option>
                     <option value="Rejected">Rejected</option>
                   </select>
                 </div>

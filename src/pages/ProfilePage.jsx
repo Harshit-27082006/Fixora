@@ -63,12 +63,10 @@ export function ProfilePage() {
             <div>
               <h2 className="text-lg font-bold text-slate-900">{currentUser.name}</h2>
               <p className="text-xs text-brand-600 font-semibold uppercase tracking-wider mt-0.5">
-                {currentUser.role === 'admin' 
-                  ? 'Central Campus Administrator' 
-                  : (currentUser.role === 'department' ? `${currentUser.departmentId} Staff Officer` : 'Verified Student')}
+                {currentUser.role === 'admin' ? 'Administrator' : 'Student'}
               </p>
               <p className="text-xs text-slate-500 mt-1">
-                {currentUser.department || currentUser.designation}
+                {currentUser.department || currentUser.designation || (currentUser.role === 'admin' ? 'Central Administration' : 'Enrolled Student')}
               </p>
             </div>
 
@@ -106,7 +104,7 @@ export function ProfilePage() {
               <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
                 <span className="text-slate-500">Access Tier:</span>
                 <span className="font-bold text-brand-700 capitalize">
-                  {currentUser.role === 'admin' ? 'Campus Administration' : (currentUser.role === 'department' ? 'Departmental Staff' : 'Enrolled Student')}
+                  {currentUser.role === 'admin' ? 'Administrator' : 'Student'}
                 </span>
               </div>
               {currentUser.role === 'student' && (
