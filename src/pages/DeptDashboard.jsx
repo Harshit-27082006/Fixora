@@ -80,20 +80,10 @@ export function DeptDashboard() {
           </p>
         </div>
 
-        {/* Quick Dept Switcher for Evaluators */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-500 font-medium hidden md:inline">
-            Switch Dept:
-          </span>
-          <select
-            value={currentDeptId}
-            onChange={(e) => switchRole('department', e.target.value)}
-            className="px-3 py-1.5 text-xs font-bold border border-slate-300 rounded-lg bg-white text-brand-700 outline-none shadow-sm cursor-pointer"
-          >
-            {DEPARTMENTS.map(d => (
-              <option key={d.id} value={d.id}>{d.name} Department</option>
-            ))}
-          </select>
+          <div className="text-xs text-slate-500 font-medium bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+            Assigned Operations: <strong className="text-slate-900 font-bold">{deptInfo.name}</strong>
+          </div>
         </div>
       </div>
 

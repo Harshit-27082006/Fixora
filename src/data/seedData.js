@@ -41,8 +41,8 @@ export const USERS = [
   {
     id: 'user_student_1',
     role: 'student',
-    name: 'Aarav Sharma',
-    email: 'aarav.sharma@campus.edu',
+    name: 'Aditya Verma',
+    email: 'aditya.verma@campus.edu',
     phone: '+91 98765 43210',
     department: 'B.Tech Computer Science',
     rollNumber: 'CS-2023-042',
@@ -106,8 +106,8 @@ export const INITIAL_COMPLAINTS = [
     status: 'Assigned',
     reportedBy: {
       id: 'user_student_1',
-      name: 'Aarav Sharma',
-      email: 'aarav.sharma@campus.edu',
+      name: 'Aditya Verma',
+      email: 'aditya.verma@campus.edu',
       role: 'Student (CS-2023-042)'
     },
     createdAt: '2026-09-12T09:30:00.000Z',
@@ -119,9 +119,9 @@ export const INITIAL_COMPLAINTS = [
       {
         status: 'Submitted',
         title: 'Complaint Logged',
-        description: 'Complaint submitted by Aarav Sharma via student portal.',
+        description: 'Complaint submitted by Aditya Verma via student portal.',
         timestamp: '2026-09-12T09:30:00.000Z',
-        actor: 'Aarav Sharma',
+        actor: 'Aditya Verma',
         actorRole: 'Student'
       },
       {
@@ -226,8 +226,8 @@ export const INITIAL_COMPLAINTS = [
     status: 'Under Review',
     reportedBy: {
       id: 'user_student_1',
-      name: 'Aarav Sharma',
-      email: 'aarav.sharma@campus.edu',
+      name: 'Aditya Verma',
+      email: 'aditya.verma@campus.edu',
       role: 'Student (CS-2023-042)'
     },
     createdAt: '2026-09-13T09:10:00.000Z',
@@ -241,7 +241,7 @@ export const INITIAL_COMPLAINTS = [
         title: 'Complaint Logged',
         description: 'Submitted with exam preparation urgency.',
         timestamp: '2026-09-13T09:10:00.000Z',
-        actor: 'Aarav Sharma',
+        actor: 'Aditya Verma',
         actorRole: 'Student'
       },
       {
@@ -436,8 +436,8 @@ export const INITIAL_COMPLAINTS = [
     status: 'Assigned',
     reportedBy: {
       id: 'user_student_1',
-      name: 'Aarav Sharma',
-      email: 'aarav.sharma@campus.edu',
+      name: 'Aditya Verma',
+      email: 'aditya.verma@campus.edu',
       role: 'Student (CS-2023-042)'
     },
     createdAt: '2026-09-12T14:20:00.000Z',
@@ -451,7 +451,7 @@ export const INITIAL_COMPLAINTS = [
         title: 'Complaint Logged',
         description: 'Student reported persistent delay on bus route 7.',
         timestamp: '2026-09-12T14:20:00.000Z',
-        actor: 'Aarav Sharma',
+        actor: 'Aditya Verma',
         actorRole: 'Student'
       },
       {
@@ -558,8 +558,8 @@ export const INITIAL_COMPLAINTS = [
     status: 'In Progress',
     reportedBy: {
       id: 'user_student_1',
-      name: 'Aarav Sharma',
-      email: 'aarav.sharma@campus.edu',
+      name: 'Aditya Verma',
+      email: 'aditya.verma@campus.edu',
       role: 'Student (CS-2023-042)'
     },
     createdAt: '2026-09-13T08:20:00.000Z',
@@ -573,7 +573,7 @@ export const INITIAL_COMPLAINTS = [
         title: 'Complaint Logged',
         description: 'Reading hall thermal comfort complaint logged.',
         timestamp: '2026-09-13T08:20:00.000Z',
-        actor: 'Aarav Sharma',
+        actor: 'Aditya Verma',
         actorRole: 'Student'
       },
       {

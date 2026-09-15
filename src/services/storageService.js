@@ -1,8 +1,8 @@
 import { INITIAL_COMPLAINTS, INITIAL_NOTIFICATIONS, USERS } from '../data/seedData';
 
-const COMPLAINTS_KEY = 'fixora_complaints_v1';
-const NOTIFICATIONS_KEY = 'fixora_notifications_v1';
-const CURRENT_USER_KEY = 'fixora_current_user_v1';
+const COMPLAINTS_KEY = 'fixora_complaints_v2';
+const NOTIFICATIONS_KEY = 'fixora_notifications_v2';
+const AUTH_USER_KEY = 'fixora_auth_user_session';
 
 export const storageService = {
   getComplaints() {
@@ -12,7 +12,7 @@ export const storageService = {
         this.saveComplaints(INITIAL_COMPLAINTS);
         return INITIAL_COMPLAINTS;
       }
-      return JSON.parse(data);
+      return parsed;
     } catch (e) {
       console.error('Error loading complaints from localStorage', e);
       return INITIAL_COMPLAINTS;
@@ -49,38 +49,49 @@ export const storageService = {
     }
   },
 
-  getCurrentUser() {
+  getAuthUser() {
     try {
-      const data = localStorage.getItem(CURRENT_USER_KEY);
-      if (!data) {
-        this.setCurrentUser(USERS[0]);
-        return USERS[0];
-      }
-      return JSON.parse(data);
+      const data = sessionStorage.getItem(AUTH_USER_KEY) || localStorage.getItem(AUTH_USER_KEY);
+      if (!data) return null;
+      const parsed = JSON.parse(data);
+      return parsed;
     } catch (e) {
-      return USERS[0];
+      return null;
     }
   },
 
-  setCurrentUser(user) {
+  setAuthUser(user, remember = true) {
     try {
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+      const json = JSON.stringify(user);
+      if (remember) {
+        localStorage.setItem(AUTH_USER_KEY, json);
+      }
+      sessionStorage.setItem(AUTH_USER_KEY, json);
     } catch (e) {
-      console.error('Error saving current user', e);
+      console.error('Error saving auth user', e);
+    }
+  },
+
+  clearAuthUser() {
+    try {
+      sessionStorage.removeItem(AUTH_USER_KEY);
+      localStorage.removeItem(AUTH_USER_KEY);
+      localStorage.removeItem('fixora_current_user_v1');
+    } catch (e) {
+      console.error('Error clearing auth user', e);
     }
   },
 
   resetAllData() {
     localStorage.removeItem(COMPLAINTS_KEY);
     localStorage.removeItem(NOTIFICATIONS_KEY);
-    localStorage.removeItem(CURRENT_USER_KEY);
+    this.clearAuthUser();
     this.saveComplaints(INITIAL_COMPLAINTS);
     this.saveNotifications(INITIAL_NOTIFICATIONS);
-    this.setCurrentUser(USERS[0]);
     return {
       complaints: INITIAL_COMPLAINTS,
       notifications: INITIAL_NOTIFICATIONS,
-      currentUser: USERS[0]
+      currentUser: null
     };
   }
 };

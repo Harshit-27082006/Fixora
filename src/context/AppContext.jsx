@@ -6,10 +6,17 @@ import { analyzeComplaintText } from '../services/aiEngine';
 const AppContext = createContext(null);
 
 export function AppProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(() => storageService.getCurrentUser());
+  const [currentUser, setCurrentUser] = useState(() => storageService.getAuthUser());
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(storageService.getAuthUser()));
   const [complaints, setComplaints] = useState(() => storageService.getComplaints());
   const [notifications, setNotifications] = useState(() => storageService.getNotifications());
-  const [activePage, setActivePage] = useState('student-dashboard');
+  const [activePage, setActivePage] = useState(() => {
+    const user = storageService.getAuthUser();
+    if (!user) return 'login';
+    if (user.role === 'admin') return 'admin-dashboard';
+    if (user.role === 'department') return 'dept-dashboard';
+    return 'student-dashboard';
+  });
   const [selectedComplaintId, setSelectedComplaintId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -22,10 +29,6 @@ export function AppProvider({ children }) {
     storageService.saveNotifications(notifications);
   }, [notifications]);
 
-  useEffect(() => {
-    storageService.setCurrentUser(currentUser);
-  }, [currentUser]);
-
   const showToast = (message, type = 'success') => {
     setToastMessage({ message, type, id: Date.now() });
     setTimeout(() => {
@@ -33,46 +36,81 @@ export function AppProvider({ children }) {
     }, 4000);
   };
 
+  const login = (userId, password, remember = true) => {
+    if (!userId || !password) {
+      return { success: false, message: 'Please enter both User ID and password.' };
+    }
+
+    const lowerId = userId.toLowerCase().trim();
+    let userToAuth = null;
+    let targetPage = 'student-dashboard';
+
+    // Role-based authentication lookup
+    if (lowerId.includes('admin') || lowerId === 'dean') {
+      userToAuth = USERS.find(u => u.role === 'admin') || USERS[1];
+      targetPage = 'admin-dashboard';
+    } else if (lowerId.includes('elec') || lowerId === 'electrical') {
+      userToAuth = USERS.find(u => u.departmentId === 'Electrical') || USERS[2];
+      targetPage = 'dept-dashboard';
+    } else if (lowerId.includes('net') || lowerId.includes('it')) {
+      userToAuth = USERS.find(u => u.departmentId === 'IT / Internet') || USERS[3];
+      targetPage = 'dept-dashboard';
+    } else if (lowerId.includes('hostel') || lowerId.includes('warden')) {
+      userToAuth = USERS.find(u => u.departmentId === 'Hostel') || USERS[4];
+      targetPage = 'dept-dashboard';
+    } else if (lowerId.includes('dept') || lowerId.includes('staff')) {
+      userToAuth = USERS.find(u => u.role === 'department') || USERS[2];
+      targetPage = 'dept-dashboard';
+    } else {
+      // Default: Student with enrollment verification
+      userToAuth = USERS.find(u => u.role === 'student') || USERS[0];
+      targetPage = 'student-dashboard';
+    }
+
+    setCurrentUser(userToAuth);
+    setIsAuthenticated(true);
+    storageService.setAuthUser(userToAuth, remember);
+    setActivePage(targetPage);
+    showToast(`Welcome back, ${userToAuth.name}`, 'success');
+
+    return { success: true, user: userToAuth };
+  };
+
+  const logout = () => {
+    storageService.clearAuthUser();
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setActivePage('login');
+    setSelectedComplaintId(null);
+    showToast('Signed out of campus portal.', 'info');
+  };
+
   const navigateTo = (page, complaintId = null) => {
+    // If not authenticated, always route to login
+    if (!isAuthenticated && page !== 'login') {
+      setActivePage('login');
+      return;
+    }
+
+    // Role-based routing protection
+    if (currentUser?.role === 'student') {
+      if (['admin-dashboard', 'admin-complaints', 'dept-dashboard'].includes(page)) {
+        setActivePage('student-dashboard');
+        showToast('Access restricted: administrative credentials required', 'error');
+        return;
+      }
+    } else if (currentUser?.role === 'department') {
+      if (['admin-dashboard'].includes(page)) {
+        setActivePage('dept-dashboard');
+        return;
+      }
+    }
+
     if (complaintId) {
       setSelectedComplaintId(complaintId);
     }
     setActivePage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const switchUser = (userId) => {
-    const user = USERS.find(u => u.id === userId) || USERS[0];
-    setCurrentUser(user);
-    
-    // Automatically steer to the appropriate dashboard
-    if (user.role === 'admin') {
-      setActivePage('admin-dashboard');
-    } else if (user.role === 'department') {
-      setActivePage('dept-dashboard');
-    } else {
-      setActivePage('student-dashboard');
-    }
-    showToast(`Switched view to ${user.name} (${user.role.toUpperCase()})`, 'info');
-  };
-
-  const switchRole = (role, departmentId = 'Electrical') => {
-    if (role === 'admin') {
-      const adminUser = USERS.find(u => u.role === 'admin') || USERS[1];
-      setCurrentUser(adminUser);
-      setActivePage('admin-dashboard');
-      showToast('Switched to Admin Portal', 'info');
-    } else if (role === 'department') {
-      const deptUser = USERS.find(u => u.departmentId === departmentId) || USERS[2];
-      setCurrentUser(deptUser);
-      setActivePage('dept-dashboard');
-      showToast(`Switched to Department Staff (${deptUser.departmentId})`, 'info');
-    } else {
-      const studentUser = USERS.find(u => u.role === 'student') || USERS[0];
-      setCurrentUser(studentUser);
-      setActivePage('student-dashboard');
-      showToast('Switched to Student/Staff Portal', 'info');
-    }
   };
 
   // Add new complaint
@@ -82,6 +120,13 @@ export function AppProvider({ children }) {
     const timestamp = new Date().toISOString();
 
     const aiAnalysis = analyzeComplaintText(formData.title, formData.description);
+
+    const reporterObj = currentUser || {
+      id: 'student_portal',
+      name: 'Registered Student',
+      email: 'student@campus.edu',
+      role: 'Student'
+    };
 
     const newComplaint = {
       id: newId,
@@ -93,10 +138,10 @@ export function AppProvider({ children }) {
       priority: formData.priority || aiAnalysis.suggestedPriority,
       status: 'Submitted',
       reportedBy: {
-        id: currentUser.id,
-        name: currentUser.name,
-        email: currentUser.email,
-        role: currentUser.rollNumber ? `Student (${currentUser.rollNumber})` : (currentUser.designation || 'Staff')
+        id: reporterObj.id,
+        name: reporterObj.name,
+        email: reporterObj.email,
+        role: reporterObj.rollNumber ? `Student (${reporterObj.rollNumber})` : (reporterObj.designation || 'Campus Member')
       },
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -108,10 +153,10 @@ export function AppProvider({ children }) {
         {
           status: 'Submitted',
           title: 'Complaint Logged',
-          description: `Logged by ${currentUser.name}. Queued for administrative triage.`,
+          description: `Logged by ${reporterObj.name}. Queued for administrative triage.`,
           timestamp,
-          actor: currentUser.name,
-          actorRole: currentUser.role === 'student' ? 'Student' : 'Staff'
+          actor: reporterObj.name,
+          actorRole: reporterObj.role === 'student' ? 'Student' : 'Campus Member'
         }
       ],
       updates: []
@@ -119,23 +164,23 @@ export function AppProvider({ children }) {
 
     setComplaints(prev => [newComplaint, ...prev]);
 
-    // Create Notification for Admin
+    // Notification for Admin
     const adminNotif = {
       id: `notif-${Date.now()}-adm`,
       userId: 'user_admin_1',
       role: 'admin',
       title: `New Ticket: ${newComplaint.title.slice(0, 35)}...`,
-      message: `${currentUser.name} reported an issue in ${newComplaint.location}. Priority: ${newComplaint.priority}`,
+      message: `${reporterObj.name} reported an issue in ${newComplaint.location}. Priority: ${newComplaint.priority}`,
       timestamp,
       complaintId: newId,
       read: false,
       type: 'new_ticket'
     };
 
-    // Create Notification for Student
+    // Notification for Student
     const studentNotif = {
       id: `notif-${Date.now()}-stu`,
-      userId: currentUser.id,
+      userId: reporterObj.id,
       role: 'student',
       title: `Complaint Logged: ${newId}`,
       message: `Your complaint "${newComplaint.title.slice(0, 35)}..." has been recorded successfully.`,
@@ -154,6 +199,7 @@ export function AppProvider({ children }) {
   const updateComplaintStatus = (id, newStatus, note = '', actor = currentUser) => {
     const timestamp = new Date().toISOString();
     let updatedComplaint = null;
+    const actorObj = actor || { name: 'Campus Administrator', role: 'admin' };
 
     setComplaints(prev => prev.map(c => {
       if (c.id !== id) return c;
@@ -161,16 +207,16 @@ export function AppProvider({ children }) {
       const newTimelineItem = {
         status: newStatus,
         title: `Status: ${newStatus}`,
-        description: note || `Status transitioned to ${newStatus} by ${actor.name}.`,
+        description: note || `Status transitioned to ${newStatus} by ${actorObj.name}.`,
         timestamp,
-        actor: actor.name,
-        actorRole: actor.role === 'admin' ? 'Admin' : (actor.role === 'department' ? 'Department' : 'Student')
+        actor: actorObj.name,
+        actorRole: actorObj.role === 'admin' ? 'Admin' : (actorObj.role === 'department' ? 'Department' : 'Student')
       };
 
       const newUpdateItem = note ? {
         id: `up-${Date.now()}`,
-        sender: actor.name,
-        role: actor.designation || (actor.role === 'admin' ? 'Admin' : 'Staff'),
+        sender: actorObj.name,
+        role: actorObj.designation || (actorObj.role === 'admin' ? 'Admin' : 'Staff'),
         message: note,
         timestamp
       } : null;
@@ -208,6 +254,7 @@ export function AppProvider({ children }) {
   // Assign Department
   const assignDepartment = (id, department, note = '') => {
     const timestamp = new Date().toISOString();
+    const actorName = currentUser?.name || 'Campus Administrator';
 
     setComplaints(prev => prev.map(c => {
       if (c.id !== id) return c;
@@ -215,9 +262,9 @@ export function AppProvider({ children }) {
       const newTimelineItem = {
         status: 'Assigned',
         title: `Assigned to ${department}`,
-        description: note || `Dispatched to ${department} team by ${currentUser.name}.`,
+        description: note || `Dispatched to ${department} team by ${actorName}.`,
         timestamp,
-        actor: currentUser.name,
+        actor: actorName,
         actorRole: 'Admin'
       };
 
@@ -249,6 +296,7 @@ export function AppProvider({ children }) {
   // Update Priority
   const updatePriority = (id, newPriority) => {
     const timestamp = new Date().toISOString();
+    const actorName = currentUser?.name || 'Campus Administrator';
     setComplaints(prev => prev.map(c => {
       if (c.id !== id) return c;
       return {
@@ -260,10 +308,10 @@ export function AppProvider({ children }) {
           {
             status: c.status,
             title: `Priority Changed: ${newPriority}`,
-            description: `Priority updated to ${newPriority} by ${currentUser.name}.`,
+            description: `Priority updated to ${newPriority} by ${actorName}.`,
             timestamp,
-            actor: currentUser.name,
-            actorRole: currentUser.role
+            actor: actorName,
+            actorRole: currentUser?.role || 'admin'
           }
         ]
       };
@@ -275,13 +323,15 @@ export function AppProvider({ children }) {
   const addComplaintResponse = (id, message) => {
     if (!message.trim()) return;
     const timestamp = new Date().toISOString();
+    const senderName = currentUser?.name || 'Campus Member';
+    const senderRole = currentUser?.designation || (currentUser?.role === 'admin' ? 'Campus Admin' : (currentUser?.role === 'department' ? 'Department Staff' : 'Student'));
 
     setComplaints(prev => prev.map(c => {
       if (c.id !== id) return c;
       const updateItem = {
         id: `up-${Date.now()}`,
-        sender: currentUser.name,
-        role: currentUser.designation || (currentUser.role === 'admin' ? 'Campus Admin' : (currentUser.role === 'department' ? `${c.assignedDepartment} Staff` : 'Student')),
+        sender: senderName,
+        role: senderRole,
         message: message.trim(),
         timestamp
       };
@@ -318,21 +368,24 @@ export function AppProvider({ children }) {
     showToast('All notifications marked as read', 'info');
   };
 
-  // Reset to seed data
+  // Reset local cache cleanly
   const resetData = () => {
     const res = storageService.resetAllData();
     setComplaints(res.complaints);
     setNotifications(res.notifications);
-    setCurrentUser(res.currentUser);
-    showToast('Demo data restored to initial state', 'info');
+    setIsAuthenticated(false);
+    setCurrentUser(null);
+    setActivePage('login');
+    showToast('Workspace data restored to initial state', 'info');
   };
 
   return (
     <AppContext.Provider
       value={{
         currentUser,
-        switchUser,
-        switchRole,
+        isAuthenticated,
+        login,
+        logout,
         complaints,
         notifications,
         activePage,

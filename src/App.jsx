@@ -3,7 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/common/Navbar';
 import { Sidebar } from './components/common/Sidebar';
 import { NotificationDrawer } from './components/notifications/NotificationDrawer';
-import { LandingPage } from './pages/LandingPage';
+import { LoginPage } from './pages/LoginPage';
 import { StudentDashboard } from './pages/StudentDashboard';
 import { ReportComplaint } from './pages/ReportComplaint';
 import { MyComplaints } from './pages/MyComplaints';
@@ -15,15 +15,26 @@ import { ProfilePage } from './pages/ProfilePage';
 import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react';
 
 function AppContent() {
-  const { activePage, toastMessage, currentUser, navigateTo } = useApp();
+  const { activePage, toastMessage, currentUser, isAuthenticated, navigateTo } = useApp();
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
-  // If on landing page, show landing page without app frame
-  if (activePage === 'landing') {
-    return <LandingPage />;
+  // If user is not logged in or activePage is 'login', show ERP login page
+  if (!isAuthenticated || activePage === 'login' || !currentUser) {
+    return <LoginPage />;
   }
 
   const renderActivePage = () => {
+    // Enforce role-based view permissions
+    if (currentUser.role === 'student') {
+      if (['admin-dashboard', 'admin-complaints', 'dept-dashboard'].includes(activePage)) {
+        return <StudentDashboard />;
+      }
+    } else if (currentUser.role === 'department') {
+      if (['admin-dashboard'].includes(activePage)) {
+        return <DeptDashboard />;
+      }
+    }
+
     switch (activePage) {
       case 'student-dashboard':
         return <StudentDashboard />;
@@ -42,6 +53,8 @@ function AppContent() {
       case 'profile':
         return <ProfilePage />;
       default:
+        if (currentUser.role === 'admin') return <AdminDashboard />;
+        if (currentUser.role === 'department') return <DeptDashboard />;
         return <StudentDashboard />;
     }
   };
@@ -85,14 +98,12 @@ function AppContent() {
             <span className="font-extrabold text-slate-900 tracking-tight">FIXORA</span>
             <span>— Campus Complaint Management System</span>
           </div>
-          <div className="flex items-center gap-4 text-slate-400">
-            <button onClick={() => navigateTo('landing')} className="hover:text-brand-600 transition-colors">
-              Landing Page
-            </button>
+          <div className="flex items-center gap-4 text-slate-400 text-[11px]">
+            <span>University Facility Redressal Portal</span>
             <span>•</span>
             <span>Report. Track. Resolve.</span>
             <span>•</span>
-            <span>SLA Engine 2.0</span>
+            <span>SLA Response Engine</span>
           </div>
         </div>
       </footer>

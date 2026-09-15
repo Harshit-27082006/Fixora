@@ -12,11 +12,14 @@ import {
   User, 
   Layers, 
   Activity,
-  AlertCircle
+  AlertCircle,
+  LogOut
 } from 'lucide-react';
 
 export function Sidebar({ onOpenNotifications }) {
-  const { currentUser, activePage, navigateTo, complaints } = useApp();
+  const { currentUser, activePage, navigateTo, complaints, logout } = useApp();
+
+  if (!currentUser) return null;
 
   // Calculate live counts
   const totalCount = complaints.length;
@@ -45,7 +48,7 @@ export function Sidebar({ onOpenNotifications }) {
       ];
     }
 
-    // Default: Student/Staff
+    // Default: Student/Staff (strictly no admin links)
     const myOpen = complaints.filter(c => c.reportedBy?.id === currentUser.id && c.status !== 'Resolved');
     return [
       { id: 'student-dashboard', label: 'Student Dashboard', icon: LayoutDashboard, badge: null },
@@ -63,15 +66,15 @@ export function Sidebar({ onOpenNotifications }) {
         {/* Role Badge Indicator */}
         <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-            Active Workspace
+            Portal Session
           </div>
           <div className="mt-1 flex items-center justify-between">
-            <span className="text-sm font-bold text-slate-800">
+            <span className="text-sm font-bold text-slate-800 truncate pr-1">
               {currentUser.role === 'admin' 
-                ? 'Campus Central Admin' 
+                ? 'Central Campus Admin' 
                 : (currentUser.role === 'department' ? `${currentUser.departmentId} Dept` : 'Student Portal')}
             </span>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
+            <span className="w-2 h-2 rounded-full bg-emerald-500 ring-4 ring-emerald-100 shrink-0" />
           </div>
           <p className="text-xs text-slate-500 mt-0.5 truncate">
             {currentUser.name}
@@ -142,8 +145,8 @@ export function Sidebar({ onOpenNotifications }) {
         </div>
       </div>
 
-      {/* Campus System Card */}
-      <div className="pt-4 border-t border-slate-100">
+      {/* Campus System Card & Sign Out */}
+      <div className="pt-4 border-t border-slate-100 space-y-3">
         <div className="p-3 bg-gradient-to-br from-slate-900 to-brand-950 rounded-xl text-white">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold flex items-center gap-1.5">
@@ -155,9 +158,17 @@ export function Sidebar({ onOpenNotifications }) {
             </span>
           </div>
           <p className="text-[11px] text-slate-300 mt-1.5 leading-relaxed">
-            Auto-triage active. Real-time routing enabled across 9 campus facilities.
+            Automated grievance triage enabled across university facilities.
           </p>
         </div>
+
+        <button
+          onClick={logout}
+          className="w-full py-2 px-3 rounded-lg text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition-colors flex items-center justify-center gap-2"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Sign Out</span>
+        </button>
       </div>
     </aside>
   );

@@ -57,7 +57,7 @@ export function AdminDashboard() {
               Campus Operations & Complaint Command Center
             </h1>
             <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
-              Admin Mode
+              Campus Administration
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">

@@ -211,20 +211,20 @@ export function ComplaintDetails() {
         )}
       </div>
 
-      {/* Role Action Management Bar */}
-      <div className="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-xl p-5 text-white shadow-md">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <span className="text-[11px] font-bold text-brand-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Wrench className="w-3.5 h-3.5" />
-              Quick Action Console ({currentUser.role.toUpperCase()} MODE)
-            </span>
-            <p className="text-xs text-slate-300">
-              {isAdmin && "As Campus Admin, triage, dispatch to departments, or adjust priority."}
-              {isDept && `As ${complaint.assignedDepartment} Staff, update work progress and mark fixes.`}
-              {currentUser.role === 'student' && "Monitor status transitions and communicate with the resolution desk."}
-            </p>
-          </div>
+      {/* Administrative / Department Resolution Action Bar (Hidden for students) */}
+      {(isAdmin || isDept) && (
+        <div className="bg-gradient-to-r from-slate-900 to-indigo-950 rounded-xl p-5 text-white shadow-md">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-[11px] font-bold text-brand-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Wrench className="w-3.5 h-3.5" />
+                {isAdmin ? 'Administrative Resolution Controls' : `${complaint.assignedDepartment} Department Action Console`}
+              </span>
+              <p className="text-xs text-slate-300">
+                {isAdmin && "Triage this ticket, dispatch to campus departments, or adjust priority SLA."}
+                {isDept && `Field staff controls for ${complaint.assignedDepartment} department tasks.`}
+              </p>
+            </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
             {/* Admin Controls */}
@@ -300,6 +300,7 @@ export function ComplaintDetails() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Grid: Left Column Details & Timeline, Right Column Activity / Feedback */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

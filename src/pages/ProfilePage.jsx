@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { USERS } from '../data/seedData';
 import { 
   User, 
   Mail, 
@@ -13,11 +12,12 @@ import {
   Bell, 
   RotateCcw,
   Sparkles,
-  Award
+  Award,
+  LogOut
 } from 'lucide-react';
 
 export function ProfilePage() {
-  const { currentUser, switchUser, complaints, resetData, showToast } = useApp();
+  const { currentUser, logout, complaints, resetData, showToast } = useApp();
 
   const [emailAlerts, setEmailAlerts] = useState(true);
   const [smsAlerts, setSmsAlerts] = useState(false);
@@ -96,32 +96,37 @@ export function ProfilePage() {
             </div>
           </div>
 
-          {/* Quick Demo Switcher Card */}
+          {/* Institutional Account Security Card */}
           <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-3">
-            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Switch Preconfigured Demo Profile
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              Institutional Account Status
             </h3>
-            <div className="space-y-1.5">
-              {USERS.map(u => (
-                <button
-                  key={u.id}
-                  onClick={() => switchUser(u.id)}
-                  className={`w-full flex items-center justify-between p-2 rounded-lg text-xs transition-all ${
-                    currentUser.id === u.id
-                      ? 'bg-brand-600 text-white font-bold shadow-sm'
-                      : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <img src={u.avatar} className="w-5 h-5 rounded-full" alt="" />
-                    <span>{u.name}</span>
-                  </div>
-                  <span className="text-[10px] opacity-80 capitalize">
-                    {u.role}
-                  </span>
-                </button>
-              ))}
+            <div className="space-y-2 text-xs text-slate-600">
+              <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                <span className="text-slate-500">SSO Status:</span>
+                <span className="font-semibold text-emerald-700">Verified Member</span>
+              </div>
+              <div className="flex justify-between items-center py-1 border-b border-slate-200/60">
+                <span className="text-slate-500">Session Security:</span>
+                <span className="font-semibold text-slate-700">Encrypted JWT</span>
+              </div>
+              <div className="flex justify-between items-center py-1">
+                <span className="text-slate-500">Access Tier:</span>
+                <span className="font-bold text-brand-700 capitalize">
+                  {currentUser.role === 'admin' ? 'Administrative' : (currentUser.role === 'department' ? 'Departmental' : 'Student Access')}
+                </span>
+              </div>
             </div>
+
+            <button
+              type="button"
+              onClick={logout}
+              className="w-full mt-2 py-2 px-3 rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-slate-200 hover:border-rose-200 text-xs font-bold transition-colors flex items-center justify-center gap-2"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log Out of Campus Portal</span>
+            </button>
           </div>
         </div>
 
@@ -207,11 +212,11 @@ export function ProfilePage() {
             </div>
           </form>
 
-          {/* Reset Demo Data Button */}
+          {/* Clear Local Cache */}
           <div className="p-4 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-between">
             <div>
-              <h4 className="text-xs font-bold text-slate-800">Restore Default Demo Data</h4>
-              <p className="text-[11px] text-slate-500">Resets complaints, timeline logs, and status entries to initial state</p>
+              <h4 className="text-xs font-bold text-slate-800">Clear Local Storage Cache</h4>
+              <p className="text-[11px] text-slate-500">Resets local browser cache and returns to institutional sign-in</p>
             </div>
             <button
               type="button"
@@ -219,7 +224,7 @@ export function ProfilePage() {
               className="px-3.5 py-1.5 bg-white hover:bg-rose-50 text-slate-700 hover:text-rose-600 border border-slate-300 rounded-lg text-xs font-bold shadow-sm transition-colors flex items-center gap-1.5"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset State</span>
+              <span>Clear Cache</span>
             </button>
           </div>
         </div>
